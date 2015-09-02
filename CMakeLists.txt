@@ -1,6 +1,6 @@
 SET(atmega328.build.f_cpu 16000000) # running on external 16MHz crystal
 
-set(CMAKE_TOOLCHAIN_FILE ../../arduino-cmake/cmake/ArduinoToolchain.cmake)
+set(CMAKE_TOOLCHAIN_FILE ../../sourcecode/arduino-cmake/cmake/ArduinoToolchain.cmake)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(GpsClock)
@@ -19,25 +19,25 @@ SET(AVRDUDE_PROGRAMMER   stk500v2) # diamex AVR von www.reichelt.de
 
 generate_arduino_library(Adafruit_GFX
     BOARD ${AVR_DEVICE}
-	SRCS  Adafruit-GFX-Library-1.0.1/Adafruit_GFX.cpp
-	HDRS  Adafruit-GFX-Library-1.0.1/Adafruit_GFX.h
+	SRCS  Adafruit-GFX-Library/Adafruit_GFX.cpp
+	HDRS  Adafruit-GFX-Library/Adafruit_GFX.h
 )
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Adafruit-GFX-Library-1.0.1)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Adafruit-GFX-Library)
 
 
 generate_arduino_library(Adafruit_SSD1306
     BOARD ${AVR_DEVICE}
-	SRCS  Adafruit_SSD1306-1.0.0/Adafruit_SSD1306.cpp
-	HDRS  Adafruit_SSD1306-1.0.0/Adafruit_SSD1306.h
+	SRCS  Adafruit_SSD1306/Adafruit_SSD1306.cpp
+	HDRS  Adafruit_SSD1306/Adafruit_SSD1306.h
 )
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Adafruit_SSD1306-1.0.0)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Adafruit_SSD1306)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(/usr/share/arduino/libraries/SPI)
 
 generate_arduino_firmware(gps_clock
     BOARD ${AVR_DEVICE}
-    SKETCH ../gps_clock
+    SKETCH ../GpsClock
 	LIBS Adafruit_GFX Adafruit_SSD1306
 #    ARDLIBS SoftwareSerial
 	PROGRAMMER stk500v2

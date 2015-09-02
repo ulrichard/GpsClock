@@ -1,4 +1,4 @@
-#include "Adafruit_SSD1306-1.0.0/Adafruit_SSD1306.h"
+#include "Adafruit_SSD1306/Adafruit_SSD1306.h"
 #include "leaper.h"
 // a string for testing : 
 // $GPRMC,154653,V,4428.2011,N,00440.5161,W,000.5,342.8,050407,,,N*7F
