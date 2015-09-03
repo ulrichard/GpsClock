@@ -17,17 +17,16 @@ void DisplayInfos();
 
 void setup()
 {
-    Serial.begin(9600);
-    Serial.println("Starting GpsClock");
-
     GPS.begin(9600);
     GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
     GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
 
-    useInterrupt(true);
+    Serial.println("Starting GpsClock");
 
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
     DisplayLeaper();
+
+    useInterrupt(true);
 
     delay(1000);
 }
@@ -61,6 +60,8 @@ void DisplayLeaper()
     }
 
 	display.display();
+
+    Serial.println("done DisplayLeaper");
 }
 
 void DisplayInfos()
@@ -98,6 +99,8 @@ void DisplayInfos()
     display.print(".");
     display.print(GPS.year);
     display.display();
+
+    Serial.println("done DisplayInfos");
 }
 
 // Interrupt is called once a millisecond, looks for any new GPS data, and stores it
