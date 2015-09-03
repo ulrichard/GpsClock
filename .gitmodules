@@ -4,3 +4,6 @@
 [submodule "Adafruit-GFX-Library"]
 	path = Adafruit-GFX-Library
 	url = https://github.com/adafruit/Adafruit-GFX-Library.git
+[submodule "Adafruit-GPS-Library"]
+	path = Adafruit-GPS-Library
+	url = https://github.com/adafruit/Adafruit-GPS-Library.git

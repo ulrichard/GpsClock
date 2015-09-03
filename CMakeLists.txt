@@ -7,14 +7,18 @@ PROJECT(GpsClock)
 
 #print_board_list()
 
-SET(AVR_DEVICE     atmega328)
-SET(AVRDUDE_DEVICE atmega328p)
-SET(AVRDUDE_PORT   /dev/ttyACM0)   # diamex AVR von www.reichelt.de
-SET(AVRDUDE_PROGRAMMER   stk500v2) # diamex AVR von www.reichelt.de
-#SET(AVR_DEVICE     nano328)
-#SET(AVRDUDE_DEVICE nano328)
-#SET(AVRDUDE_PORT   /dev/ttyUSB0)    # Arduino
-#SET(AVRDUDE_PROGRAMMER    arduino)  # Arduino
+SET(IS_SOLDERED FALSE)
+IF(${IS_SOLDERED})
+    SET(AVR_DEVICE     atmega328)
+    SET(AVRDUDE_DEVICE atmega328p)
+    SET(AVRDUDE_PORT   /dev/ttyACM0)   # diamex AVR von www.reichelt.de
+    SET(AVRDUDE_PROGRAMMER   stk500v2) # diamex AVR von www.reichelt.de
+ELSE()
+    SET(AVR_DEVICE     nano328)
+    SET(AVRDUDE_DEVICE nano328)
+    SET(AVRDUDE_PORT   /dev/ttyUSB0)    # Arduino
+    SET(AVRDUDE_PROGRAMMER    arduino)  # Arduino
+ENDIF()
 
 
 generate_arduino_library(Adafruit_GFX
@@ -32,13 +36,26 @@ generate_arduino_library(Adafruit_SSD1306
 )
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Adafruit_SSD1306)
 
+
+generate_arduino_library(Adafruit-GPS-Library
+    BOARD ${AVR_DEVICE}
+	SRCS  Adafruit-GPS-Library/Adafruit_GPS.cpp
+	HDRS  Adafruit-GPS-Library/Adafruit_GPS.h
+)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Adafruit-GPS-Library)
+
+
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(/usr/share/arduino/libraries/SPI)
+INCLUDE_DIRECTORIES(/usr/share/arduino/libraries/SoftwareSerial)
 
 generate_arduino_firmware(gps_clock
     BOARD ${AVR_DEVICE}
     SKETCH ../GpsClock
-	LIBS Adafruit_GFX Adafruit_SSD1306
+	LIBS
+        Adafruit_GFX
+        Adafruit_SSD1306
+        Adafruit-GPS-Library
 #    ARDLIBS SoftwareSerial
 	PROGRAMMER stk500v2
     PORT  ${AVRDUDE_PORT}

@@ -1,173 +1,63 @@
 #include "Adafruit_SSD1306/Adafruit_SSD1306.h"
+#include "Adafruit-GPS-Library/Adafruit_GPS.h"
 #include "leaper.h"
 // a string for testing : 
 // $GPRMC,154653,V,4428.2011,N,00440.5161,W,000.5,342.8,050407,,,N*7F
 // $GPRMC,000138.799,V,,,,,0.00,0.00,060180,,,N*4F
 
 Adafruit_SSD1306 display(4);
+HardwareSerial& mySerial = Serial;
+Adafruit_GPS GPS(&mySerial);
 
-bool gotGPS;
-struct Time
-{
-	uint8_t hour, min, sec;
-} currTime;
+bool usingInterrupt = false;
 
-const char cmd[7] = "$GPRMC";
-int counter1 = 0; // counts how many bytes were received (max 300)
-int counter2 = 0; // counts how many commas were seen
-int offsets[13];
-char buf[260] = "";
-
+void useInterrupt(bool);
 void DisplayLeaper();
 void DisplayInfos();
 
 void setup()
 {
-	gotGPS = false;
-	currTime.hour = currTime.min = currTime.sec = 0;
-	
-    memset(buf, '0', sizeof(buf));
-    memset(offsets, 0, sizeof(offsets));
-    ResetBuffer();
-
     Serial.begin(9600);
+    Serial.println("Starting GpsClock");
+
+    GPS.begin(9600);
+    GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
+    GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+
+    useInterrupt(true);
 
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
     DisplayLeaper();
-}
- 
-void ResetBuffer()
-{
-    counter1 = 0;
-    counter2 = 0;
-    offsets[0] = 0;
-}
- 
-int GetSize(int offset)
-{
-    return offsets[offset+1] - offsets[offset] - 1;
-}
- 
-int HandleByte(int byteGPS)
-{
-    buf[counter1] = byteGPS;
-    Serial.print((char)byteGPS);
-    counter1++;
-    if(counter1 >= sizeof(buf))
-        return 0;
-    if(byteGPS == ',')
-    {
-        counter2++;
-        offsets[counter2] = counter1;
-        if(counter2 >= sizeof(offsets) / sizeof(int))
-            return 0;
-    }
-    else if(byteGPS == '*')
-        offsets[12] = counter1;
-    else if(byteGPS == 10) // Check if we got a <LF>, which indicates the end of line
-    {
-        // Check that we got 12 pieces, and that the first piece is 6 characters
-        if(counter2 < 12 || (GetSize(0) != 6))
-            return 0;
 
-        // Check that we received $GPRMC
-        for(int j=0; j<6; j++)
-            if(buf[j] != cmd[j])
-                return 0;
-
-        // Check that time is well formed
-        if(GetSize(1) < 6)
-        {
-            DisplayLeaper();
-            return 0;
-        }
-
-        // Check that date is well formed
-        if(GetSize(9) != 6)
-        {
-            DisplayLeaper();
-            return 0;
-        }
-
-        // Check that velocity is well formed
-        if(GetSize(7) == 0)
-        {
-            DisplayLeaper();
-            return 0;
-        }
-
-        // TODO: compute and validate checksum
-
-        // TODO: handle timezone offset
-
-		char tmp[5];
-		tmp[2] = '\0';
-		tmp[0] = buf[offsets[1]+0];
-		tmp[1] = buf[offsets[1]+1];
-		currTime.hour = atoi(tmp);
-		tmp[0] = buf[offsets[1]+2];
-		tmp[1] = buf[offsets[1]+3];
-		currTime.min = atoi(tmp);
-		tmp[0] = buf[offsets[1]+4];
-		tmp[1] = buf[offsets[1]+5];
-		currTime.sec = atoi(tmp);
-        gotGPS = true;
-
-        // Check that lat/lon are well formed
-        if(GetSize(3) < 4 || GetSize(4) == 0 || GetSize(5) < 4 || GetSize(6) == 0)
-        {
-            DisplayLeaper();
-            return 0;
-        }
-
-        DisplayInfos();
-
-        return 0;
-    }
-    return 1;
-}
- 
-/**
- * Main loop
- */
-void loop()
-{
-    if(Serial.available() <= 0)
-        delay(100);
-    else
-    {
-        const int byteGPS = Serial.read(); // Read a byte of the serial port
-        if(byteGPS < 0)
-            delay(100);
-        else if(!HandleByte(byteGPS))
-            ResetBuffer();
-    }
+    delay(1000);
 }
 
 void DisplayLeaper()
 {
+    Serial.println("DisplayLeaper");
+
 	display.clearDisplay();
 	display.drawBitmap(0, 15, leaper, 128, 48, 1);
 
 	display.setTextColor(WHITE);
     display.setCursor(0, 0);
 
-    if(!gotGPS)
+    if(!GPS.fix)
 	    display.print("no GPS signal ");
     else
     {
 	    display.print("no GPS   ");
-        if(currTime.hour < 10)
+        if(GPS.hour < 10)
 	        display.print("0");
-	    display.print(currTime.hour, DEC);
+	    display.print(GPS.hour, DEC);
 	    display.print(":");
-        if(currTime.min < 10)
+        if(GPS.minute < 10)
 	        display.print("0");
-	    display.print(currTime.min,  DEC);
+	    display.print(GPS.minute,  DEC);
 	    display.print(":");
-        if(currTime.sec < 10)
+        if(GPS.seconds < 10)
 	        display.print("0");
-	    display.print(currTime.sec,  DEC);
+	    display.print(GPS.seconds,  DEC);
     }
 
 	display.display();
@@ -175,13 +65,15 @@ void DisplayLeaper()
 
 void DisplayInfos()
 {
+    Serial.println("DisplayInfos");
+
     display.clearDisplay();
     display.setTextColor(WHITE);
     display.setCursor(0, 0);
 
     // print groundspeed
     display.setTextSize(2);
-    const uint16_t speed = 18.52 * atof(buf + offsets[7]);
+    const uint16_t speed = GPS.speed * 1.852;
     display.print(speed / 10, DEC);
     display.print('.');
     display.print(speed % 10, DEC);
@@ -189,28 +81,84 @@ void DisplayInfos()
 
     // print time
     display.setTextSize(3);
-    for(int j=0; j<6; j++)
-    {
-        display.print(buf[offsets[1]+j]);
-        if(j==1)
-            display.print(":");
-        else if(j==3)
-        {
-            display.setTextSize(2);
-            display.print(":");
-        }
-    }
+    display.print(GPS.hour, DEC);
+    display.print(":");
+    display.print(GPS.minute, DEC);
+    display.setTextSize(2);
+    display.print(":");
+    display.print(GPS.seconds, DEC);
     display.print("\n");
     display.display();
 
     // print date
     display.setTextSize(1);
-    for(int j=0; j<6; j++)
-    {
-        display.print(buf[offsets[9]+j]);
-        if(j==1 || j==3)
-            display.print(".");
-    }
+    display.print(GPS.day);
+    display.print(".");
+    display.print(GPS.month);
+    display.print(".");
+    display.print(GPS.year);
     display.display();
 }
 
+// Interrupt is called once a millisecond, looks for any new GPS data, and stores it
+SIGNAL(TIMER0_COMPA_vect)
+{
+    char c = GPS.read();
+}
+
+void useInterrupt(bool v)
+{
+    if(v)
+    {
+        // Timer0 is already used for millis() - we'll just interrupt somewhere
+        // in the middle and call the "Compare A" function above
+        OCR0A = 0xAF;
+        TIMSK0 |= _BV(OCIE0A);
+        usingInterrupt = true;
+    }
+    else
+    {
+        // do not call the interrupt function COMPA anymore
+        TIMSK0 &= ~_BV(OCIE0A);
+        usingInterrupt = false;
+    }
+}
+
+uint32_t timer = millis();
+void loop()                     // run over and over again
+{
+    // in case you are not using the interrupt above, you'll
+    // need to 'hand query' the GPS, not suggested :(
+    if(! usingInterrupt)
+    {
+        // read data from the GPS in the 'main loop'
+        char c = GPS.read();
+    }
+
+    // if a sentence is received, we can check the checksum, parse it...
+    if(GPS.newNMEAreceived())
+    {
+        // a tricky thing here is if we print the NMEA sentence, or data
+        // we end up not listening and catching other sentences! 
+        // so be very wary if using OUTPUT_ALLDATA and trytng to print out data
+        //Serial.println(GPS.lastNMEA());   // this also sets the newNMEAreceived() flag to false
+
+        if(!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
+            return;  // we can fail to parse a sentence in which case we should just wait for another
+    }
+
+    // if millis() or timer wraps around, we'll just reset it
+    if(timer > millis())
+        timer = millis();
+
+    // approximately every 2 seconds or so, print out the current stats
+    if(millis() - timer > 2000)
+    { 
+        timer = millis(); // reset the timer
+    
+        if(GPS.fix)
+            DisplayInfos();
+        else
+            DisplayLeaper();
+    }
+}
