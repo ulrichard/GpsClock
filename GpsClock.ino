@@ -1,5 +1,6 @@
 #include "Adafruit_SSD1306/Adafruit_SSD1306.h"
 #include "Adafruit-GPS-Library/Adafruit_GPS.h"
+#include <MemoryFree.h>
 #include "leaper.h"
 // a string for testing : 
 // $GPRMC,154653,V,4428.2011,N,00440.5161,W,000.5,342.8,050407,,,N*7F
@@ -22,6 +23,7 @@ void setup()
     GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
 
     Serial.println("Starting GpsClock");
+    Serial.println(freeMemory(), DEC);
 
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
     DisplayLeaper();

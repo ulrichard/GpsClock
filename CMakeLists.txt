@@ -45,6 +45,14 @@ generate_arduino_library(Adafruit-GPS-Library
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Adafruit-GPS-Library)
 
 
+generate_arduino_library(MemoryFree
+    BOARD ${AVR_DEVICE}
+	SRCS  MemoryFree/MemoryFree.cpp
+	HDRS  MemoryFree/MemoryFree.h
+)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/MemoryFree)
+
+
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(/usr/share/arduino/libraries/SPI)
 INCLUDE_DIRECTORIES(/usr/share/arduino/libraries/SoftwareSerial)
@@ -56,6 +64,7 @@ generate_arduino_firmware(gps_clock
         Adafruit_GFX
         Adafruit_SSD1306
         Adafruit-GPS-Library
+        MemoryFree
 #    ARDLIBS SoftwareSerial
 	PROGRAMMER stk500v2
     PORT  ${AVRDUDE_PORT}
