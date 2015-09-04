@@ -1,5 +1,5 @@
-#include "Adafruit_SSD1306/Adafruit_SSD1306.h"
-#include "Adafruit-GPS-Library/Adafruit_GPS.h"
+#include <Adafruit_SSD1306.h>
+#include <Adafruit_GPS.h>
 #include <MemoryFree.h>
 #include "leaper.h"
 // a string for testing : 

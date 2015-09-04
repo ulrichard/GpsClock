@@ -1,12 +1,12 @@
 [submodule "Adafruit_SSD1306"]
 	path = Adafruit_SSD1306
-	url = https://github.com/adafruit/Adafruit_SSD1306.git
+	url = git@github.com:ulrichard/Adafruit_SSD1306.git
 [submodule "Adafruit-GFX-Library"]
 	path = Adafruit-GFX-Library
 	url = https://github.com/adafruit/Adafruit-GFX-Library.git
 [submodule "Adafruit-GPS-Library"]
 	path = Adafruit-GPS-Library
-	url = https://github.com/adafruit/Adafruit-GPS-Library.git
+	url = git@github.com:ulrichard/Adafruit-GPS-Library.git
 [submodule "MemoryFree"]
 	path = MemoryFree
 	url = https://github.com/McNeight/MemoryFree
