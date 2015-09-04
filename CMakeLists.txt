@@ -20,6 +20,7 @@ ELSE()
     SET(AVRDUDE_PROGRAMMER    arduino)  # Arduino
 ENDIF()
 
+ADD_DEFINITIONS(-std=c++11)
 
 generate_arduino_library(Adafruit_GFX
     BOARD ${AVR_DEVICE}
