@@ -21,6 +21,10 @@ void CopyData(const Adafruit_GPS& gps);
 
 void setup()
 {
+    Serial.begin(9600);
+    Serial.println("Starting GpsClock");
+    Serial.println(freeMemory(), DEC);
+
     DisplayLeaper();
 
     {
@@ -29,10 +33,6 @@ void setup()
         GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
         GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
     }
-
-    Serial.println("Starting GpsClock");
-    Serial.println(freeMemory(), DEC);
-
 
     useInterrupt(true);
 
@@ -57,6 +57,8 @@ void DisplayLeaper()
 
     Adafruit_SSD1306 display(4);
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+
+    Serial.println(freeMemory(), DEC);
 
 	display.clearDisplay();
 	display.drawBitmap(0, 15, leaper, 128, 48, 1);
