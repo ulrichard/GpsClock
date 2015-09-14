@@ -1,141 +1,53 @@
-#include <Adafruit_SSD1306.h>
 #include <Adafruit_GPS.h>
 #include <MemoryFree.h>
-#include "leaper.h"
+#include "GpsClockData.h"
+
 // a string for testing : 
 // $GPRMC,154653,V,4428.2011,N,00440.5161,W,000.5,342.8,050407,,,N*7F
 // $GPRMC,000138.799,V,,,,,0.00,0.00,060180,,,N*4F
 
 HardwareSerial& mySerial = Serial;
-Adafruit_GPS* pGPS = nullptr;
+Adafruit_GPS GPS(&mySerial);
 
 bool usingInterrupt = false;
-uint8_t hour, minute, seconds, year, month, day;
-float speed;
-bool fix = false;
+GpsClockData gpsData;
 
 void useInterrupt(bool);
 void DisplayLeaper();
 void DisplayInfos();
-void CopyData(const Adafruit_GPS& gps);
+void CopyData(const Adafruit_GPS& gps, GpsClockData& gcd);
 
 void setup()
 {
     Serial.begin(9600);
-    Serial.println("Starting GpsClock");
+    Serial.println("Starting GpsClock GpsBoard");
     Serial.println(freeMemory(), DEC);
 
-    DisplayLeaper();
-
-    {
-        Adafruit_GPS GPS(&mySerial);
-        GPS.begin(9600);
-        GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
-        GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
-    }
+    GPS.begin(9600);
+    GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
+    GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
 
     useInterrupt(true);
 
     delay(1000);
 }
 
-void CopyData(const Adafruit_GPS& gps)
+void CopyData(const Adafruit_GPS& gps, GpsClockData& gcd)
 {
-    hour    = gps.hour;
-    minute  = gps.minute;
-    seconds = gps.seconds;
-    year    = gps.year;
-    month   = gps.month;
-    day     = gps.day;
-    speed   = gps.speed;
-    fix     = gps.fix;
-}
-
-void DisplayLeaper()
-{
-    Serial.println("DisplayLeaper");
-
-    Adafruit_SSD1306 display(4);
-    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-
-    Serial.println(freeMemory(), DEC);
-
-	display.clearDisplay();
-	display.drawBitmap(0, 15, leaper, 128, 48, 1);
-
-	display.setTextColor(WHITE);
-    display.setCursor(0, 0);
-
-    if(!fix)
-	    display.print("no GPS signal ");
-    else
-    {
-	    display.print("no GPS   ");
-        if(hour < 10)
-	        display.print("0");
-	    display.print(hour, DEC);
-	    display.print(":");
-        if(minute < 10)
-	        display.print("0");
-	    display.print(minute,  DEC);
-	    display.print(":");
-        if(seconds < 10)
-	        display.print("0");
-	    display.print(seconds,  DEC);
-    }
-
-	display.display();
-
-    Serial.println("done DisplayLeaper");
-}
-
-void DisplayInfos()
-{
-    Serial.println("DisplayInfos");
-
-    Adafruit_SSD1306 display(4);
-    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-
-    display.clearDisplay();
-    display.setTextColor(WHITE);
-    display.setCursor(0, 0);
-
-    // print groundspeed
-    display.setTextSize(2);
-    const uint16_t speed = speed * 1.852;
-    display.print(speed / 10, DEC);
-    display.print('.');
-    display.print(speed % 10, DEC);
-    display.println(" kmh");
-
-    // print time
-    display.setTextSize(3);
-    display.print(hour, DEC);
-    display.print(":");
-    display.print(minute, DEC);
-    display.setTextSize(2);
-    display.print(":");
-    display.print(seconds, DEC);
-    display.print("\n");
-    display.display();
-
-    // print date
-    display.setTextSize(1);
-    display.print(day);
-    display.print(".");
-    display.print(month);
-    display.print(".");
-    display.print(year);
-    display.display();
-
-    Serial.println("done DisplayInfos");
+    gcd.hour    = gps.hour;
+    gcd.minute  = gps.minute;
+    gcd.seconds = gps.seconds;
+    gcd.year    = gps.year;
+    gcd.month   = gps.month;
+    gcd.day     = gps.day;
+    gcd.speed   = gps.speed;
+    gcd.fix     = gps.fix;
 }
 
 // Interrupt is called once a millisecond, looks for any new GPS data, and stores it
 SIGNAL(TIMER0_COMPA_vect)
 {
-    if(pGPS != nullptr)
-        char c = pGPS->read();
+    char c = GPS.read();
 }
 
 void useInterrupt(bool v)
@@ -161,21 +73,13 @@ void loop()                     // run over and over again
 {
     // in case you are not using the interrupt above, you'll
     // need to 'hand query' the GPS, not suggested :(
-    if(! usingInterrupt)
+    if(!usingInterrupt)
     {
         // read data from the GPS in the 'main loop'
-        if(pGPS != nullptr)
-            char c = pGPS->read();
+        char c = GPS.read();
     }
 
     {
-    
-        Adafruit_GPS GPS(&mySerial);
-        pGPS = &GPS;
-        GPS.begin(9600);
-    
-        delay(1000);
-
         // if a sentence is received, we can check the checksum, parse it...
         if(GPS.newNMEAreceived())
         {
@@ -186,10 +90,8 @@ void loop()                     // run over and over again
 
             if(!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
                 return;  // we can fail to parse a sentence in which case we should just wait for another
-            CopyData(GPS);
+            CopyData(GPS, gpsData);
         }
-    
-        pGPS = nullptr;
     }
 
     // if millis() or timer wraps around, we'll just reset it
@@ -201,9 +103,7 @@ void loop()                     // run over and over again
     { 
         timer = millis(); // reset the timer
     
-        if(fix)
-            DisplayInfos();
-        else
-            DisplayLeaper();
+		// ToDo : call the DisplayBoard over i2c
+        
     }
 }
