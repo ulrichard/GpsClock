@@ -1,16 +1,14 @@
+#include "leaper.h"
+#include "../GpsClockData.h"
 #include <Adafruit_SSD1306.h>
 #include <MemoryFree.h>
-#include "leaper.h"
-#include "GpsClockData.h"
-
-uint8_t hour, minute, seconds, year, month, day;
-float speed;
+#include <Wire.h>
 
 Adafruit_SSD1306 display(4);
-GpsClockData gpsData;
 
-void DisplayLeaper();
-void DisplayInfos();
+void AcquireGpsData(GpsClockDataSerializable& gpsData);
+void DisplayLeaper(const GpsClockData& gpsData);
+void DisplayInfos(const GpsClockData& gpsData);
 
 void setup()
 {
@@ -20,10 +18,22 @@ void setup()
 
 	display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
 
-    DisplayLeaper();
+    GpsClockData gpsData; 
+    gpsData.fix = false;
+    DisplayLeaper(gpsData);
 }
 
-void DisplayLeaper()
+void AcquireGpsData(GpsClockDataSerializable& gpsData)
+{
+    Wire.requestFrom(i2dAddrGpsBoard, sizeof(GpsClockData));
+    for(uint16_t i = 0; i < sizeof(GpsClockData) && Wire.available(); ++i)
+    {
+        char cc = Wire.read();
+        gpsData.c[i] = cc;
+    }
+}
+
+void DisplayLeaper(const GpsClockData& gpsData)
 {
     Serial.println("DisplayLeaper");
 
@@ -40,7 +50,7 @@ void DisplayLeaper()
     else
     {
 	    display.print("no GPS   ");
-        if(hour < 10)
+        if(gpsData.hour < 10)
 	        display.print("0");
 	    display.print(gpsData.hour, DEC);
 	    display.print(":");
@@ -58,7 +68,7 @@ void DisplayLeaper()
     Serial.println("done DisplayLeaper");
 }
 
-void DisplayInfos()
+void DisplayInfos(const GpsClockData& gpsData)
 {
     Serial.println("DisplayInfos");
 
@@ -99,9 +109,14 @@ void DisplayInfos()
 
 void loop()
 {
-    // todo: configure as i2c slave
-		if(gpsData.fix)
-            DisplayInfos();
-        else
-            DisplayLeaper();
+    GpsClockDataSerializable gpsData; 
+    
+    AcquireGpsData(gpsData);
+
+    if(gpsData.g.fix)
+        DisplayInfos(gpsData.g);
+    else
+        DisplayLeaper(gpsData.g);
+
+    delay(500);
 }

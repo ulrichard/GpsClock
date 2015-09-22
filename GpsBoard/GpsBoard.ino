@@ -1,6 +1,7 @@
+#include "../GpsClockData.h"
 #include <Adafruit_GPS.h>
 #include <MemoryFree.h>
-#include "GpsClockData.h"
+#include <Wire.h>
 
 // a string for testing : 
 // $GPRMC,154653,V,4428.2011,N,00440.5161,W,000.5,342.8,050407,,,N*7F
@@ -10,12 +11,12 @@ HardwareSerial& mySerial = Serial;
 Adafruit_GPS GPS(&mySerial);
 
 bool usingInterrupt = false;
-GpsClockData gpsData;
+GpsClockDataSerializable gpsData[2];
+uint8_t gpsBufNum = 0;
 
 void useInterrupt(bool);
-void DisplayLeaper();
-void DisplayInfos();
 void CopyData(const Adafruit_GPS& gps, GpsClockData& gcd);
+void receiveEvent(int howMany);
 
 void setup()
 {
@@ -30,6 +31,15 @@ void setup()
     useInterrupt(true);
 
     delay(1000);
+
+    Wire.begin(i2dAddrGpsBoard);
+    Wire.onReceive(receiveEvent);
+}
+
+void receiveEvent(int howMany)
+{
+    for(uint16_t i = 0; i < sizeof(GpsClockData); ++i)
+        Wire.write(gpsData[gpsBufNum].c[i]);
 }
 
 void CopyData(const Adafruit_GPS& gps, GpsClockData& gcd)
@@ -90,7 +100,8 @@ void loop()                     // run over and over again
 
             if(!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
                 return;  // we can fail to parse a sentence in which case we should just wait for another
-            CopyData(GPS, gpsData);
+            CopyData(GPS, gpsData[gpsBufNum].g);
+            gpsBufNum = (gpsBufNum + 1) % 2;
         }
     }
 
