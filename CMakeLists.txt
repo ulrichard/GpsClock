@@ -5,7 +5,7 @@ set(CMAKE_TOOLCHAIN_FILE arduino-cmake/cmake/ArduinoToolchain.cmake)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(GpsClock)
 
-#print_board_list()
+print_board_list()
 
 SET(IS_SOLDERED FALSE)
 IF(${IS_SOLDERED})
@@ -14,7 +14,8 @@ IF(${IS_SOLDERED})
     SET(AVRDUDE_PORT   /dev/ttyACM0)   # diamex AVR von www.reichelt.de
     SET(AVRDUDE_PROGRAMMER   stk500v2) # diamex AVR von www.reichelt.de
 ELSE()
-    SET(AVR_DEVICE     nano328)
+#    SET(AVR_DEVICE     nano328)
+    SET(AVR_DEVICE     atmega328)
     SET(AVRDUDE_DEVICE atmega328p)
     SET(AVRDUDE_PORT   /dev/ttyUSB0)    # Arduino
     SET(AVRDUDE_PROGRAMMER    arduino)  # Arduino

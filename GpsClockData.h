@@ -13,6 +13,6 @@ struct GpsClockData
 union GpsClockDataSerializable
 {
     GpsClockData g;
-    char c[sizeof(GpsClockData)];
+    uint8_t c[sizeof(GpsClockData)];
 };
 

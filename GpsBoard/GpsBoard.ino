@@ -16,13 +16,21 @@ uint8_t gpsBufNum = 0;
 
 void useInterrupt(bool);
 void CopyData(const Adafruit_GPS& gps, GpsClockData& gcd);
-void receiveEvent(int howMany);
+void requestEvent();
 
 void setup()
 {
-    Serial.begin(9600);
-    Serial.println("Starting GpsClock GpsBoard");
-    Serial.println(freeMemory(), DEC);
+//    Serial.begin(9600);
+//    Serial.println("Starting GpsClock GpsBoard");
+//    Serial.println(freeMemory(), DEC);
+
+    for(uint8_t i=0; i<2; ++i)
+    {
+        gpsData[i].g.fix    = false;
+        gpsData[i].g.speed  = 55;
+        gpsData[i].g.hour   = 11;
+        gpsData[i].g.minute = 58;
+    }
 
     GPS.begin(9600);
     GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
@@ -33,13 +41,14 @@ void setup()
     delay(1000);
 
     Wire.begin(i2dAddrGpsBoard);
-    Wire.onReceive(receiveEvent);
+    Wire.onRequest(requestEvent);
 }
 
-void receiveEvent(int howMany)
+void requestEvent()
 {
-    for(uint16_t i = 0; i < sizeof(GpsClockData); ++i)
-        Wire.write(gpsData[gpsBufNum].c[i]);
+//    Serial.println("writing data to i2c");
+    const uint8_t bufNum = (gpsBufNum + 1) % 2;
+    Wire.write(gpsData[bufNum].c, sizeof(GpsClockData));
 }
 
 void CopyData(const Adafruit_GPS& gps, GpsClockData& gcd)
@@ -96,11 +105,17 @@ void loop()                     // run over and over again
             // a tricky thing here is if we print the NMEA sentence, or data
             // we end up not listening and catching other sentences! 
             // so be very wary if using OUTPUT_ALLDATA and trytng to print out data
-            //Serial.println(GPS.lastNMEA());   // this also sets the newNMEAreceived() flag to false
+//            Serial.println(GPS.lastNMEA());   // this also sets the newNMEAreceived() flag to false
 
             if(!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
                 return;  // we can fail to parse a sentence in which case we should just wait for another
             CopyData(GPS, gpsData[gpsBufNum].g);
+
+//            if(gpsData[gpsBufNum].g.fix)
+//                Serial.println("NMEA sentence complete with FIX");
+//            else
+//                Serial.println("NMEA sentence complete no fix");
+
             gpsBufNum = (gpsBufNum + 1) % 2;
         }
     }
