@@ -16,6 +16,8 @@ void setup()
     Serial.println("Starting GpsClock DisplayBoard");
     Serial.println(freeMemory(), DEC);
 
+    delay(200);
+
 	display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
 
     GpsClockData gpsData; 
@@ -78,7 +80,7 @@ void DisplayInfos(const GpsClockData& gpsData)
 
     // print groundspeed
     display.setTextSize(2);
-    const uint16_t speed = gpsData.speed * 1.852;
+    const uint16_t speed = gpsData.speed * 18.52;
     display.print(speed / 10, DEC);
     display.print('.');
     display.print(speed % 10, DEC);
@@ -86,11 +88,17 @@ void DisplayInfos(const GpsClockData& gpsData)
 
     // print time
     display.setTextSize(3);
+    if(gpsData.hour < 10)
+        display.print("0");
     display.print(gpsData.hour, DEC);
     display.print(":");
+    if(gpsData.minute < 10)
+        display.print("0");
     display.print(gpsData.minute, DEC);
     display.setTextSize(2);
     display.print(":");
+    if(gpsData.seconds < 10)
+        display.print("0");
     display.print(gpsData.seconds, DEC);
     display.print("\n");
     display.display();
@@ -100,11 +108,9 @@ void DisplayInfos(const GpsClockData& gpsData)
     display.print(gpsData.day);
     display.print(".");
     display.print(gpsData.month);
-    display.print(".");
+    display.print(".20");
     display.print(gpsData.year);
     display.display();
-
-    Serial.println("done DisplayInfos");
 }
 
 void loop()
@@ -113,10 +119,13 @@ void loop()
     
     AcquireGpsData(gpsData);
 
+    // hardcoded time zone for Swiss daylight saving time
+    gpsData.g.hour = (gpsData.g.hour + 2) % 24;
+
     if(gpsData.g.fix)
         DisplayInfos(gpsData.g);
     else
         DisplayLeaper(gpsData.g);
 
-    delay(500);
+    delay(300);
 }

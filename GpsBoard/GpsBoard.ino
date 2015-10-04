@@ -20,18 +20,6 @@ void requestEvent();
 
 void setup()
 {
-//    Serial.begin(9600);
-//    Serial.println("Starting GpsClock GpsBoard");
-//    Serial.println(freeMemory(), DEC);
-
-    for(uint8_t i=0; i<2; ++i)
-    {
-        gpsData[i].g.fix    = false;
-        gpsData[i].g.speed  = 55;
-        gpsData[i].g.hour   = 11;
-        gpsData[i].g.minute = 58;
-    }
-
     GPS.begin(9600);
     GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
     GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
@@ -46,7 +34,6 @@ void setup()
 
 void requestEvent()
 {
-//    Serial.println("writing data to i2c");
     const uint8_t bufNum = (gpsBufNum + 1) % 2;
     Wire.write(gpsData[bufNum].c, sizeof(GpsClockData));
 }
@@ -87,7 +74,6 @@ void useInterrupt(bool v)
     }
 }
 
-uint32_t timer = millis();
 void loop()                     // run over and over again
 {
     // in case you are not using the interrupt above, you'll
@@ -111,25 +97,7 @@ void loop()                     // run over and over again
                 return;  // we can fail to parse a sentence in which case we should just wait for another
             CopyData(GPS, gpsData[gpsBufNum].g);
 
-//            if(gpsData[gpsBufNum].g.fix)
-//                Serial.println("NMEA sentence complete with FIX");
-//            else
-//                Serial.println("NMEA sentence complete no fix");
-
             gpsBufNum = (gpsBufNum + 1) % 2;
         }
-    }
-
-    // if millis() or timer wraps around, we'll just reset it
-    if(timer > millis())
-        timer = millis();
-
-    // approximately every 2 seconds or so, print out the current stats
-    if(millis() - timer > 2000)
-    { 
-        timer = millis(); // reset the timer
-    
-		// ToDo : call the DisplayBoard over i2c
-        
     }
 }

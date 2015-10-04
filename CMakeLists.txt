@@ -5,9 +5,9 @@ set(CMAKE_TOOLCHAIN_FILE arduino-cmake/cmake/ArduinoToolchain.cmake)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(GpsClock)
 
-print_board_list()
+#print_board_list()
 
-SET(IS_SOLDERED FALSE)
+SET(IS_SOLDERED TRUE)
 IF(${IS_SOLDERED})
     SET(AVR_DEVICE     atmega328)
     SET(AVRDUDE_DEVICE atmega328p)
